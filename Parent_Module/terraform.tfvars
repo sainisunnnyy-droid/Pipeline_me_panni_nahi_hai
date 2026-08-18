@@ -1,6 +1,6 @@
 rgva = {
   rg1 = {
-    name       = "rg_smack"
+    name       = "rg_agant"
     location   = "westus"
     managed_by = "wwe"
   }
