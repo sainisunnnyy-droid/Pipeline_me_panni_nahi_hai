@@ -10,7 +10,7 @@ rgva = {
     managed_by = "wwe"
   }
   rg3 = {
-    name       = "rg_samsun"
+    name       = "rg_samsung"
     location   = "westus"
     managed_by = "wwe"
   }

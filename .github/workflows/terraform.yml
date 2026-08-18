@@ -7,23 +7,18 @@ on:
       - feature/rg_moon
       - main
 
-
-  pull_request:
-    branches:
-      - main
-
 permissions:
   contents: read
 
 jobs:
 
-  # ==========================================
-  # FEATURE BRANCH / PULL REQUEST
-  # INIT + VALIDATE + SCAN + PLAN
-  # ==========================================
+  # ==========================================================
+  # FEATURE BRANCH
+  # FMT + INIT + SCAN + PLAN
+  # ==========================================================
   terraform-plan:
 
-    if: github.ref != 'refs/heads/main' || github.event_name == 'pull_request'
+    if: startsWith(github.ref, 'refs/heads/feature/')
 
     runs-on: ubuntu-latest
 
@@ -33,26 +28,41 @@ jobs:
 
     steps:
 
+      # ------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # ------------------------------------------------------
+      # Azure Login
+      # ------------------------------------------------------
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # ------------------------------------------------------
+      # Terraform Setup
+      # ------------------------------------------------------
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      # ------------------------------------------------------
+      # Terraform Format Check
+      # ------------------------------------------------------
       - name: Terraform Format Check
         run: terraform fmt -check -recursive
 
+      # ------------------------------------------------------
+      # Terraform Init
+      # ------------------------------------------------------
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Validate
-        run: terraform validate
-
+      # ------------------------------------------------------
+      # Terraform Security Scan
+      # ------------------------------------------------------
       - name: Terraform Security Scan
         uses: aquasecurity/trivy-action@master
         with:
@@ -62,23 +72,20 @@ jobs:
           exit-code: 1
           severity: CRITICAL,HIGH
 
+      # ------------------------------------------------------
+      # Terraform Plan
+      # ------------------------------------------------------
       - name: Terraform Plan
-        run: terraform plan -out=tfplan
-
-      - name: Upload Terraform Plan
-        uses: actions/upload-artifact@v4
-        with:
-          name: terraform-plan
-          path: Parent_Module/tfplan
+        run: terraform plan
 
 
-  # ==========================================
+  # ==========================================================
   # MAIN BRANCH
   # INIT + PLAN + APPLY
-  # ==========================================
+  # ==========================================================
   terraform-apply:
 
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    if: github.ref == 'refs/heads/main'
 
     runs-on: ubuntu-latest
 
@@ -91,25 +98,40 @@ jobs:
 
     steps:
 
+      # ------------------------------------------------------
+      # Checkout
+      # ------------------------------------------------------
       - name: Checkout Repository
         uses: actions/checkout@v4
 
+      # ------------------------------------------------------
+      # Azure Login
+      # ------------------------------------------------------
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      # ------------------------------------------------------
+      # Terraform Setup
+      # ------------------------------------------------------
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
 
+      # ------------------------------------------------------
+      # Terraform Init
+      # ------------------------------------------------------
       - name: Terraform Init
         run: terraform init
 
-      - name: Terraform Validate
-        run: terraform validate
-
+      # ------------------------------------------------------
+      # Terraform Plan
+      # ------------------------------------------------------
       - name: Terraform Plan
         run: terraform plan -out=tfplan
 
+      # ------------------------------------------------------
+      # Terraform Apply
+      # ------------------------------------------------------
       - name: Terraform Apply
         run: terraform apply -auto-approve tfplan
